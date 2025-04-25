@@ -22,6 +22,8 @@ async def register_command(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     log_callback(user_id, "register", username=callback.from_user.username, full_name=callback.from_user.full_name)
     
+    print(f"DEBUG: Registration button clicked by user {user_id}")
+    
     if is_user_banned(user_id):
         try:
             await callback.answer("Вы заблокированы и не можете использовать бота.", show_alert=True)
@@ -56,8 +58,7 @@ async def register_command(callback: CallbackQuery, state: FSMContext):
     log_info(f"User [ID: {user_id}] started registration process")
     # Начало процесса регистрации
     await callback.message.edit_text(
-        "Пожалуйста, введите Ваше ФИО:",
-        reply_markup=get_back_keyboard()
+        "Пожалуйста, введите Ваше ФИО:"
     )
     await state.set_state(RegistrationStates.full_name)
     try:
@@ -86,85 +87,75 @@ async def process_name(message: Message, state: FSMContext):
     
     # Запрашиваем курс
     await message.answer(
-        "Пожалуйста, выберите Ваш курс:",
-        reply_markup=get_auth_keyboards()["courses"]
+        "Пожалуйста, введите Ваш курс (от 1 до 4):"
     )
     await state.set_state(RegistrationStates.course)
 
 
-@router.callback_query(RegistrationStates.course)
-async def process_course(callback: CallbackQuery, state: FSMContext):
+@router.message(RegistrationStates.course)
+async def process_course(message: Message, state: FSMContext):
     """Сохранение курса и запрос факультета"""
-    user_id = callback.from_user.id
-    course = callback.data
+    user_id = message.from_user.id
+    course = message.text
     
-    log_callback(user_id, course, username=callback.from_user.username, full_name=callback.from_user.full_name)
+    # Проверяем ввод курса
+    if not course.isdigit() or int(course) < 1 or int(course) > 4:
+        await message.answer("Пожалуйста, введите корректный курс (число от 1 до 4).")
+        return
     
     # Сохраняем курс в состоянии
     await state.update_data(course=course)
-    log_info(f"User [ID: {user_id}] selected course: {course}")
+    log_info(f"User [ID: {user_id}] entered course: {course}")
     
     # Запрашиваем факультет
-    await callback.message.edit_text(
-        "Пожалуйста, выберите Ваш факультет:",
-        reply_markup=get_auth_keyboards()["faculties"]
+    await message.answer(
+        "Пожалуйста, введите Ваш факультет:"
     )
     await state.set_state(RegistrationStates.faculty)
-    try:
-        await callback.answer()
-    except TelegramBadRequest:
-        # Игнорируем ошибку, если callback query устарел
-        pass
 
 
-@router.callback_query(RegistrationStates.faculty)
-async def process_faculty(callback: CallbackQuery, state: FSMContext):
+@router.message(RegistrationStates.faculty)
+async def process_faculty(message: Message, state: FSMContext):
     """Сохранение факультета и запрос кафедры"""
-    user_id = callback.from_user.id
-    faculty = callback.data
+    user_id = message.from_user.id
+    faculty = message.text
     
-    log_callback(user_id, faculty, username=callback.from_user.username, full_name=callback.from_user.full_name)
+    # Проверяем ввод
+    if not faculty or faculty.strip() == "":
+        await message.answer("Пожалуйста, введите корректный факультет.")
+        return
     
     # Сохраняем факультет в состоянии
     await state.update_data(faculty=faculty)
-    log_info(f"User [ID: {user_id}] selected faculty: {faculty}")
+    log_info(f"User [ID: {user_id}] entered faculty: {faculty}")
     
     # Запрашиваем кафедру
-    await callback.message.edit_text(
-        "Пожалуйста, выберите Вашу кафедру:",
-        reply_markup=get_auth_keyboards()["departments"]
+    await message.answer(
+        "Пожалуйста, введите Вашу кафедру:"
     )
     await state.set_state(RegistrationStates.department)
-    try:
-        await callback.answer()
-    except TelegramBadRequest:
-        # Игнорируем ошибку, если callback query устарел
-        pass
 
 
-@router.callback_query(RegistrationStates.department)
-async def process_department(callback: CallbackQuery, state: FSMContext):
+@router.message(RegistrationStates.department)
+async def process_department(message: Message, state: FSMContext):
     """Сохранение кафедры и запрос группы"""
-    user_id = callback.from_user.id
-    department = callback.data
+    user_id = message.from_user.id
+    department = message.text
     
-    log_callback(user_id, department, username=callback.from_user.username, full_name=callback.from_user.full_name)
+    # Проверяем ввод
+    if not department or department.strip() == "":
+        await message.answer("Пожалуйста, введите корректную кафедру.")
+        return
     
     # Сохраняем кафедру в состоянии
     await state.update_data(department=department)
-    log_info(f"User [ID: {user_id}] selected department: {department}")
+    log_info(f"User [ID: {user_id}] entered department: {department}")
     
     # Запрашиваем группу
-    await callback.message.edit_text(
-        "Пожалуйста, введите Вашу группу (например, ПИз-200):",
-        reply_markup=get_back_keyboard()
+    await message.answer(
+        "Пожалуйста, введите Вашу группу (например, ПИз-200):"
     )
     await state.set_state(RegistrationStates.group)
-    try:
-        await callback.answer()
-    except TelegramBadRequest:
-        # Игнорируем ошибку, если callback query устарел
-        pass
 
 
 @router.message(RegistrationStates.group)
@@ -199,76 +190,4 @@ async def process_group(message: Message, state: FSMContext):
         "Регистрация успешно завершена! Теперь вы можете задавать вопросы и использовать чат.",
         reply_markup=get_main_keyboard(user_id)
     )
-    await state.clear()
-
-
-@router.callback_query(F.data == "back", RegistrationStates.course)
-async def back_to_name(callback: CallbackQuery, state: FSMContext):
-    """Возврат к вводу имени"""
-    user_id = callback.from_user.id
-    log_callback(user_id, "back_to_name", username=callback.from_user.username, full_name=callback.from_user.full_name)
-    
-    await callback.message.edit_text(
-        "Пожалуйста, введите Ваше ФИО:",
-        reply_markup=get_back_keyboard()
-    )
-    await state.set_state(RegistrationStates.full_name)
-    try:
-        await callback.answer()
-    except TelegramBadRequest:
-        # Игнорируем ошибку, если callback query устарел
-        pass
-
-
-@router.callback_query(F.data == "back", RegistrationStates.faculty)
-async def back_to_course(callback: CallbackQuery, state: FSMContext):
-    """Возврат к выбору курса"""
-    user_id = callback.from_user.id
-    log_callback(user_id, "back_to_course", username=callback.from_user.username, full_name=callback.from_user.full_name)
-    
-    await callback.message.edit_text(
-        "Пожалуйста, выберите Ваш курс:",
-        reply_markup=get_auth_keyboards()["courses"]
-    )
-    await state.set_state(RegistrationStates.course)
-    try:
-        await callback.answer()
-    except TelegramBadRequest:
-        # Игнорируем ошибку, если callback query устарел
-        pass
-
-
-@router.callback_query(F.data == "back", RegistrationStates.department)
-async def back_to_faculty(callback: CallbackQuery, state: FSMContext):
-    """Возврат к выбору факультета"""
-    user_id = callback.from_user.id
-    log_callback(user_id, "back_to_faculty", username=callback.from_user.username, full_name=callback.from_user.full_name)
-    
-    await callback.message.edit_text(
-        "Пожалуйста, выберите Ваш факультет:",
-        reply_markup=get_auth_keyboards()["faculties"]
-    )
-    await state.set_state(RegistrationStates.faculty)
-    try:
-        await callback.answer()
-    except TelegramBadRequest:
-        # Игнорируем ошибку, если callback query устарел
-        pass
-
-
-@router.callback_query(F.data == "back", RegistrationStates.group)
-async def back_to_department(callback: CallbackQuery, state: FSMContext):
-    """Возврат к выбору кафедры"""
-    user_id = callback.from_user.id
-    log_callback(user_id, "back_to_department", username=callback.from_user.username, full_name=callback.from_user.full_name)
-    
-    await callback.message.edit_text(
-        "Пожалуйста, выберите Вашу кафедру:",
-        reply_markup=get_auth_keyboards()["departments"]
-    )
-    await state.set_state(RegistrationStates.department)
-    try:
-        await callback.answer()
-    except TelegramBadRequest:
-        # Игнорируем ошибку, если callback query устарел
-        pass 
+    await state.clear() 

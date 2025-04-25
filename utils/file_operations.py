@@ -10,7 +10,30 @@ def get_user_data_path(user_id: int) -> str:
 
 def is_user_registered(user_id: int) -> bool:
     """Проверка на зарегистрирован ли уже пользователь."""
-    return os.path.exists(get_user_data_path(user_id))
+    file_path = get_user_data_path(user_id)
+    
+    print(f"DEBUG: Checking registration for user {user_id}, path: {file_path}")
+    
+    # Проверяем, существует ли файл
+    if not os.path.exists(file_path):
+        print(f"DEBUG: File doesn't exist for user {user_id}")
+        return False
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            user_data = json.load(file)
+            print(f"DEBUG: User data keys: {list(user_data.keys())}")
+            
+            # Проверяем наличие всех необходимых полей регистрации
+            has_registration = ("full_name" in user_data and 
+                                "course" in user_data and 
+                                "faculty" in user_data)
+            
+            print(f"DEBUG: User {user_id} has registration data: {has_registration}")
+            return has_registration
+    except Exception as e:
+        print(f"DEBUG: Error reading user data: {e}")
+        return False
 
 
 def load_user_data(user_id: int) -> Dict[str, Any]:
@@ -37,9 +60,12 @@ def get_user_language(user_id: int) -> str:
 
 def set_user_language(user_id: int, language: str) -> None:
     """Сохранение выбранного языка пользователя."""
+    print(f"DEBUG: Setting language {language} for user {user_id}")
     user_data = load_user_data(user_id)
+    print(f"DEBUG: Current user data before language set: {user_data}")
     user_data["language"] = language
     save_user_data(user_id, user_data)
+    print(f"DEBUG: Saved user data with language: {user_data}")
 
 
 def load_faq(language: str = "ru") -> Dict[str, Any]:

@@ -57,25 +57,37 @@ def get_main_keyboard(user_id: int = None):
     if user_id is not None:
         language = get_user_language(user_id)
     
-    # Only show registration button if user is not registered
-    if user_id is not None and not is_user_registered(user_id):
+    # Проверяем регистрацию
+    is_registered = False
+    if user_id is not None:
+        is_registered = is_user_registered(user_id)
+        print(f"DEBUG: In keyboard - User {user_id} is_registered={is_registered}")
+    
+    # User is not registered
+    if not is_registered:
+        # Show only "Registration" and "FAQ" for unregistered users
+        print(f"DEBUG: Adding registration button for user {user_id}")
         builder.button(
             text=get_button_text("register", language),
             callback_data="register"
         )
-    
-    builder.button(
-        text=get_button_text("faq", language),
-        callback_data="faq"
-    )
-    
-    builder.button(
-        text=get_button_text("ask_question", language),
-        callback_data="ask"
-    )
-    
-    # Add chat button if user is registered
-    if user_id is not None and is_user_registered(user_id):
+        
+        builder.button(
+            text=get_button_text("faq", language),
+            callback_data="faq"
+        )
+    else:
+        # User is registered - show "FAQ", "Ask question", and "Chat"
+        builder.button(
+            text=get_button_text("faq", language),
+            callback_data="faq"
+        )
+        
+        builder.button(
+            text=get_button_text("ask_question", language),
+            callback_data="ask"
+        )
+        
         builder.button(
             text=get_button_text("chat", language),
             callback_data="chat"
@@ -108,37 +120,23 @@ def get_faq_back_keyboard(language: str = "ru"):
 
 
 def get_back_keyboard(language: str = "ru") -> InlineKeyboardMarkup:
-    """Создает клавиатуру с кнопкой 'Назад'."""
+    """Создает пустую клавиатуру вместо кнопки 'Назад'."""
     builder = InlineKeyboardBuilder()
-    builder.button(
-        text=get_button_text("back", language),
-        callback_data="back"
-    )
     return builder.as_markup()
 
 
-def get_auth_keyboards(language: str = "ru") -> tuple[InlineKeyboardMarkup, InlineKeyboardMarkup]:
-    """Создает клавиатуры для авторизации."""
-    # Клавиатура для подтверждения
-    confirm_builder = InlineKeyboardBuilder()
-    confirm_builder.button(
-        text=get_button_text("confirm", language),
-        callback_data="auth_confirm"
-    )
-    confirm_builder.button(
-        text=get_button_text("cancel", language),
-        callback_data="auth_cancel"
-    )
-    confirm_builder.adjust(2)  # Размещаем кнопки в 2 колонки
+def get_auth_keyboards(language: str = "ru") -> dict[str, InlineKeyboardMarkup]:
+    """Создает клавиатуры для регистрации."""
+    # Пустые клавиатуры для всех этапов регистрации
+    courses_builder = InlineKeyboardBuilder()
+    faculties_builder = InlineKeyboardBuilder()
+    departments_builder = InlineKeyboardBuilder()
     
-    # Клавиатура для отмены
-    cancel_builder = InlineKeyboardBuilder()
-    cancel_builder.button(
-        text=get_button_text("cancel", language),
-        callback_data="auth_cancel"
-    )
-    
-    return confirm_builder.as_markup(), cancel_builder.as_markup()
+    return {
+        "courses": courses_builder.as_markup(),
+        "faculties": faculties_builder.as_markup(),
+        "departments": departments_builder.as_markup()
+    }
 
 
 def get_language_selection_keyboard() -> InlineKeyboardMarkup:

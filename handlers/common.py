@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from aiogram.exceptions import TelegramBadRequest
 
-from utils.file_operations import is_user_banned, get_user_language, set_user_language
+from utils.file_operations import is_user_banned, get_user_language, set_user_language, is_user_registered
 from utils.keyboards import get_main_keyboard, get_language_selection_keyboard
 from utils.messages import get_message
 from states.chat import ChatStates
@@ -54,10 +54,17 @@ async def process_language_selection(callback: CallbackQuery, state: FSMContext)
     # Очищаем состояние
     await state.clear()
     
+    # Проверяем, зарегистрирован ли пользователь
+    is_registered = is_user_registered(user_id)
+    print(f"DEBUG: User {user_id} is_registered={is_registered}")
+    
+    # Создаем клавиатуру в зависимости от статуса регистрации
+    keyboard = get_main_keyboard(user_id)
+    
     # Отправляем сообщение о выборе языка
     await callback.message.edit_text(
         f"{language_message}\n\n{welcome_message}",
-        reply_markup=get_main_keyboard(user_id)
+        reply_markup=keyboard
     )
     
     try:
