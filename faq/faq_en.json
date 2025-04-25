@@ -1,0 +1,14 @@
+{
+    "1": {
+        "question": "What formulas are used to calculate the final grade and the admission rating (AR)?",
+        "answer": "РД = ((СР1 + СР2) / 2 + (Р1 + Р2) / 2) / 2"
+    },
+    "2": {
+        "question": "What is the required GPA to receive a scholarship?",
+        "answer": "To receive a scholarship, a GPA of 70 or higher is required."
+    },
+    "3": {
+        "question": "FX retake procedure",
+        "answer": "If a student scores 0–24 points, they must register for the exam (IGZ). The cost is 7500 KZT per credit. If a student scores 25–49 points, they are allowed to take a retake exam (peresdacha). Only one retake is allowed per subject, and it costs 4000 KZT. There is no retake option for the subject “History of Kazakhstan.To register for a retake, students must write an application, send it along with the payment receipt to their curator, and they take the retake the following day."
+    }
+} 
